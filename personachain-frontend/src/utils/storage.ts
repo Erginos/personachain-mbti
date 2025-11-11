@@ -4,6 +4,7 @@ export interface MintedNFT {
   mintedAt: string;
   txId?: string;  // Add this line
   mint?: string;
+  network: string;  // ADD THIS LINE
 }
 
 export const MINTED_NFTS_KEY = 'personachain_minted_nfts';
