@@ -237,9 +237,7 @@ function ResultsDisplay({
     }
 
     setMinting(true);
-    try {
-      const metadata = generateNFTMetadata(walletPubkey, personality);
-
+  try {
       // CARV SVM Testnet - https://rpc.testnet.carv.io/rpc
       const txId = 'tx_' + Math.random().toString(36).substr(2, 20);
 
