@@ -1,0 +1,13 @@
+[package]
+name = "personachain_program"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+solana-program = "1.18"
+anchor-lang = "0.29"
+
+[lib]
+crate-type = ["cdylib", "lib"]  # ensures no main needed, correct for anchor
+
+# Remove [[bin]] section if present for Anchor program
