@@ -14,11 +14,14 @@ export function saveMintedNFT(nft: MintedNFT): void {
 
 
 export function getMintedNFTs(): MintedNFT[] {
-  // ...
+  const data = localStorage.getItem('mintedNFTs');
+  return data ? JSON.parse(data) : [];
 }
+
 
 // ONLY ONE hasMinted function!
 export function hasMinted(): MintedNFT | null {
   const minted = getMintedNFTs();
   return minted.length > 0 ? minted[minted.length - 1] : null;
 }
+
