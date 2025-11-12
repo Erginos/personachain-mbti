@@ -6,9 +6,6 @@ import { saveMintedNFT } from '@/utils/storage';
 import { PERSONA_NFT_PROGRAM_ID, CARV_RPC } from '@/config/programs';
 import { PublicKey, Connection, Transaction, SystemProgram } from '@solana/web3.js';
 import { useState } from 'react';
-import { Connection, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
-import { CARV_RPC } from '@/config/programs';
-
 
 interface Question {
   id: number;
@@ -239,7 +236,7 @@ function ResultsDisplay({
   if (!walletPubkey) {
     alert('Please connect your wallet first.');
     return;
-  }
+  }  // ✅ Remove the semicolon!
 
   setMinting(true);
   try {
