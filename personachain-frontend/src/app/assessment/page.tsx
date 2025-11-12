@@ -1,6 +1,5 @@
 'use client';
 
-import React, { useState } from 'react';
 import AssessmentForm from '@/components/AssessmentForm';
 
 export default function AssessmentPage() {
