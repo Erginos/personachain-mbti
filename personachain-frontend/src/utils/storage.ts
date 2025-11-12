@@ -6,7 +6,7 @@ export interface MintedNFT {
   network: string;
 } 
 
-export function saveMintedNFT(nft: MintedNFT): void {
+export function saveMintedNFT(_nft: MintedNFT): void {
   const nfts = getMintedNFTs();
   nfts.push(nft);
   localStorage.setItem('mintedNFTs', JSON.stringify(nfts));
