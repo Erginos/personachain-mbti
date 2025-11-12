@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { saveMintedNFT } from '@/utils/storage';
-import { generateNFTMetadata } from '@/utils/nftGenerator';
 
 interface Question {
   id: number;
