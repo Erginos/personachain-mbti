@@ -1,9 +1,8 @@
 'use client';
 
-import { useWallet } from '@solana/wallet-adapter-react';
 import { useRouter } from 'next/navigation';
 import { saveMintedNFT } from '@/utils/storage';
-import { PERSONA_NFT_PROGRAM_ID, CARV_RPC } from '@/config/programs';
+import { CARV_RPC } from '@/config/programs';
 import { PublicKey, Connection, Transaction, SystemProgram } from '@solana/web3.js';
 import { useState } from 'react';
 
@@ -52,6 +51,14 @@ const PERSONALITY_DESCRIPTIONS: { [key: string]: string } = {
   'ESFP': 'Outgoing, spontaneous, and entertaining. Loves being the center of attention.',
 };
 
+const getProvider = () => {
+  const win = window as any;
+  if (win.solana) return win.solana;
+  if (win.backpack) return win.backpack;
+  if (win.xnft && win.xnft.solana) return win.xnft.solana;
+  return null;
+};
+
 export default function AssessmentForm() {
   const router = useRouter();
   const [current, setCurrent] = useState(0);
@@ -84,14 +91,6 @@ export default function AssessmentForm() {
     letters.push(dims.JP >= 0 ? 'J' : 'P');
 
     setResult(letters.join(''));
-  };
-
-  const getProvider = () => {
-    const win = window as any;
-    if (win.solana) return win.solana;
-    if (win.backpack) return win.backpack;
-    if (win.xnft && win.xnft.solana) return win.xnft.solana;
-    return null;
   };
 
   const connectWallet = async () => {
@@ -142,16 +141,10 @@ export default function AssessmentForm() {
             <h1 className="text-2xl font-bold mb-4">Welcome — connect your Solana wallet to begin</h1>
             <p className="mb-4 text-gray-600">Please connect a Solana wallet (Backpack or Phantom recommended).</p>
             <div className="flex items-center justify-center gap-4">
-              <button
-                className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700"
-                onClick={connectWallet}
-              >
+              <button className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700" onClick={connectWallet}>
                 Connect Wallet
               </button>
-              <button
-                className="px-6 py-3 border rounded-md hover:bg-gray-100"
-                onClick={() => alert('Get Backpack: https://backpack.app/')}
-              >
+              <button className="px-6 py-3 border rounded-md hover:bg-gray-100" onClick={() => alert('Get Backpack: https://backpack.app/')}>
                 Get Wallet
               </button>
             </div>
@@ -163,29 +156,18 @@ export default function AssessmentForm() {
         <div>
           <div className="mb-6">
             <div className="bg-gray-200 h-2 rounded-full overflow-hidden">
-              <div
-                className="bg-blue-600 h-2 rounded-full transition-all"
-                style={{ width: `${((current + 1) / QUESTIONS.length) * 100}%` }}
-              />
+              <div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${((current + 1) / QUESTIONS.length) * 100}%` }} />
             </div>
-            <p className="text-sm text-gray-600 mt-2">
-              Question {current + 1} of {QUESTIONS.length}
-            </p>
+            <p className="text-sm text-gray-600 mt-2">Question {current + 1} of {QUESTIONS.length}</p>
           </div>
 
           <h2 className="text-2xl font-semibold mb-4">{QUESTIONS[current].text}</h2>
 
           <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((score) => (
-              <button
-                key={score}
-                onClick={() => handleAnswer(score)}
-                className="w-full p-4 border rounded-lg hover:scale-[1.01] transition transform text-left hover:border-blue-500 hover:bg-blue-50"
-              >
+              <button key={score} onClick={() => handleAnswer(score)} className="w-full p-4 border rounded-lg hover:scale-[1.01] transition transform text-left hover:border-blue-500 hover:bg-blue-50">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">
-                    {['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][score - 1]}
-                  </span>
+                  <span className="font-medium">{['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][score - 1]}</span>
                   <span className="text-sm text-gray-500">{score}</span>
                 </div>
               </button>
@@ -198,11 +180,7 @@ export default function AssessmentForm() {
     return (
       <ResultsDisplay
         personality={result}
-        onRestart={() => {
-          setAnswers([]);
-          setCurrent(0);
-          setResult(null);
-        }}
+        onRestart={() => { setAnswers([]); setCurrent(0); setResult(null); }}
         walletPubkey={walletPubkey}
         connectWallet={connectWallet}
         disconnectWallet={disconnectWallet}
@@ -233,54 +211,87 @@ function ResultsDisplay({
   const [minting, setMinting] = useState(false);
 
   const handleMint = async () => {
-  if (!walletPubkey) {
-    alert('Please connect your wallet first.');
-    return;
-  }  // ✅ Remove the semicolon!
-
-  setMinting(true);
-  try {
-    const connection = new Connection(CARV_RPC, 'confirmed');
-    const provider = getProvider();
-    
-    if (!provider) {
-      throw new Error('No wallet provider');
+    if (!walletPubkey) {
+      alert('Please connect your wallet first.');
+      return;
     }
 
-    // Create a simple transaction to CARV SVM
-    const transaction = new Transaction().add(
-      SystemProgram.transfer({
-        fromPubkey: new PublicKey(walletPubkey),
-        toPubkey: new PublicKey(walletPubkey),
-        lamports: 0,
-      })
-    );
+    setMinting(true);
+    try {
+      const connection = new Connection(CARV_RPC, 'confirmed');
+      const provider = getProvider();
+      
+      if (!provider) {
+        throw new Error('No wallet provider');
+      }
 
-    transaction.feePayer = new PublicKey(walletPubkey);
-    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(walletPubkey),
+          toPubkey: new PublicKey(walletPubkey),
+          lamports: 0,
+        })
+      );
 
-    const signedTx = await provider.signTransaction(transaction);
-    const txId = await connection.sendRawTransaction(signedTx.serialize());
-    await connection.confirmTransaction(txId, 'confirmed');
+      transaction.feePayer = new PublicKey(walletPubkey);
+      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-    // Save to storage
-    saveMintedNFT({
-      walletAddress: walletPubkey,
-      personality,
-      mintedAt: new Date().toISOString(),
-      txId,
-      network: 'carv-svm-testnet',
-    });
+      const signedTx = await provider.signTransaction(transaction);
+      const txId = await connection.sendRawTransaction(signedTx.serialize());
+      await connection.confirmTransaction(txId, 'confirmed');
 
-    alert('NFT Minted! TX: ' + txId.slice(0, 20) + '...');
+      saveMintedNFT({
+        walletAddress: walletPubkey,
+        personality,
+        mintedAt: new Date().toISOString(),
+        txId,
+        network: 'carv-svm-testnet',
+      });
 
-    setTimeout(() => {
-      router.push(`/success?wallet=${walletPubkey}`);
-    }, 1000);
-  } catch (err: any) {
-    console.error('Mint error:', err);
-    alert('Error: ' + (err?.message || err));
-  } finally {
-    setMinting(false);
-  }
-};
+      alert('NFT Minted! TX: ' + txId.slice(0, 20) + '...');
+
+      setTimeout(() => {
+        router.push(`/success?wallet=${walletPubkey}`);
+      }, 1000);
+    } catch (err: any) {
+      console.error('Mint error:', err);
+      alert('Error: ' + (err?.message || err));
+    } finally {
+      setMinting(false);
+    }
+  };
+
+  return (
+    <div className="text-center">
+      <h1 className="text-4xl font-bold mb-4">Your Personality Type</h1>
+      <p className="text-6xl font-extrabold text-blue-600 mb-6">{personality}</p>
+      <p className="text-gray-600 mb-6 text-lg">{description}</p>
+
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+        {walletPubkey ? (
+          <>
+            <div className="px-4 py-2 border rounded bg-gray-50">
+              Connected: <span className="font-mono font-bold">{walletPubkey.slice(0, 6)}...{walletPubkey.slice(-6)}</span>
+            </div>
+            <button className="px-4 py-2 border rounded hover:bg-red-50" onClick={disconnectWallet}>
+              Disconnect
+            </button>
+          </>
+        ) : (
+          <button className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700" onClick={connectWallet}>
+            Connect Wallet
+          </button>
+        )}
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <button className="bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 disabled:opacity-50" onClick={handleMint} disabled={minting || !walletPubkey}>
+          {minting ? 'Minting...' : 'Save & Mint NFT 🚀'}
+        </button>
+        <button className="px-6 py-3 border rounded-md hover:bg-gray-100" onClick={onRestart}>
+          Retake Assessment
+        </button>
+      </div>
+    </div>
+  );
+}
