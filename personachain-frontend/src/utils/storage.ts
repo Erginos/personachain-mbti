@@ -30,3 +30,7 @@ export function clearMintedNFTs() {
   localStorage.removeItem(MINTED_NFTS_KEY);
 }
 
+export function hasMinted(): MintedNFT | null {
+  const minted = getMintedNFTs();
+  return minted.length > 0 ? minted[minted.length - 1] : null;
+}
