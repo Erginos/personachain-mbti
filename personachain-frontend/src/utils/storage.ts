@@ -1,10 +1,15 @@
- interface MintedNFT {
+export interface MintedNFT {
   walletAddress: string;
   personality: string;
   mintedAt: string;
   txId: string;
-  network: string;  // ADD THIS LINE
+  network: string;
 }
+
+export function hasMinted() {
+  // ... rest of code
+}
+
 
 
 export const MINTED_NFTS_KEY = 'personachain_minted_nfts';
