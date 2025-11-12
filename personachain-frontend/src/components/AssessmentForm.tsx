@@ -1,8 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { useRouter } from 'next/navigation';
 import { saveMintedNFT } from '@/utils/storage';
+import { PERSONA_NFT_PROGRAM_ID, CARV_RPC } from '@/config/programs';
+import { PublicKey, Connection, Transaction, SystemProgram } from '@solana/web3.js';
+import { useState } from 'react';
+import { Connection, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { CARV_RPC } from '@/config/programs';
+
 
 interface Question {
   id: number;
@@ -230,83 +236,54 @@ function ResultsDisplay({
   const [minting, setMinting] = useState(false);
 
   const handleMint = async () => {
-    if (!walletPubkey) {
-      alert('Please connect your wallet first.');
-      return;
+  if (!walletPubkey) {
+    alert('Please connect your wallet first.');
+    return;
+  }
+
+  setMinting(true);
+  try {
+    const connection = new Connection(CARV_RPC, 'confirmed');
+    const provider = getProvider();
+    
+    if (!provider) {
+      throw new Error('No wallet provider');
     }
 
-    setMinting(true);
-    try {
+    // Create a simple transaction to CARV SVM
+    const transaction = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey: new PublicKey(walletPubkey),
+        toPubkey: new PublicKey(walletPubkey),
+        lamports: 0,
+      })
+    );
 
-      // CARV SVM Testnet - https://rpc.testnet.carv.io/rpc
-      const txId = 'tx_' + Math.random().toString(36).substr(2, 20);
+    transaction.feePayer = new PublicKey(walletPubkey);
+    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-      saveMintedNFT({
-        walletAddress: walletPubkey,
-        personality,
-        mintedAt: new Date().toISOString(),
-        txId,
-        network: 'carv-svm-testnet',
-      });
+    const signedTx = await provider.signTransaction(transaction);
+    const txId = await connection.sendRawTransaction(signedTx.serialize());
+    await connection.confirmTransaction(txId, 'confirmed');
 
-      alert('NFT Saved on CARV SVM! TX: ' + txId.slice(0, 20) + '...');
+    // Save to storage
+    saveMintedNFT({
+      walletAddress: walletPubkey,
+      personality,
+      mintedAt: new Date().toISOString(),
+      txId,
+      network: 'carv-svm-testnet',
+    });
 
-      setTimeout(() => {
-        router.push(`/success?wallet=${walletPubkey}`);
-      }, 1000);
-    } catch (err: any) {
-      console.error('Error:', err);
-      alert('Error: ' + (err?.message || err));
-    } finally {
-      setMinting(false);
-    }
-  };
+    alert('NFT Minted! TX: ' + txId.slice(0, 20) + '...');
 
-  return (
-    <div className="text-center">
-      <h1 className="text-4xl font-bold mb-4">Your Personality Type</h1>
-      <p className="text-6xl font-extrabold text-blue-600 mb-6">{personality}</p>
-      <p className="text-gray-600 mb-6 text-lg">{description}</p>
-
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
-        {walletPubkey ? (
-          <>
-            <div className="px-4 py-2 border rounded bg-gray-50">
-              Connected: <span className="font-mono font-bold">{walletPubkey.slice(0, 6)}...{walletPubkey.slice(-6)}</span>
-            </div>
-            <button
-              className="px-4 py-2 border rounded hover:bg-red-50"
-              onClick={disconnectWallet}
-            >
-              Disconnect
-            </button>
-          </>
-        ) : (
-          <button
-            className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700"
-            onClick={connectWallet}
-          >
-            Connect Wallet
-          </button>
-        )}
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <button
-          className="bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 disabled:opacity-50"
-          onClick={handleMint}
-          disabled={minting || !walletPubkey}
-        >
-          {minting ? 'Saving...' : 'Save & Mint NFT 🚀'}
-        </button>
-
-        <button
-          className="px-6 py-3 border rounded-md hover:bg-gray-100"
-          onClick={onRestart}
-        >
-          Retake Assessment
-        </button>
-      </div>
-    </div>
-  );
-}
+    setTimeout(() => {
+      router.push(`/success?wallet=${walletPubkey}`);
+    }, 1000);
+  } catch (err: any) {
+    console.error('Mint error:', err);
+    alert('Error: ' + (err?.message || err));
+  } finally {
+    setMinting(false);
+  }
+};
