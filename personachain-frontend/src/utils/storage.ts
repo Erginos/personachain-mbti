@@ -26,11 +26,6 @@ export function getMintedNFTs(): MintedNFT[] {
   return data ? JSON.parse(data) : [];
 }
 
-export function hasMinted(walletAddress: string): MintedNFT | null {
-  const minted = getMintedNFTs();
-  return minted.find(nft => nft.walletAddress === walletAddress) || null;
-}
-
 export function clearMintedNFTs() {
   localStorage.removeItem(MINTED_NFTS_KEY);
 }
