@@ -4,11 +4,14 @@ export interface MintedNFT {
   mintedAt: string;
   txId: string;
   network: string;
-}
+} 
 
 export function saveMintedNFT(nft: MintedNFT): void {
-  // ...
+  const nfts = getMintedNFTs();
+  nfts.push(nft);
+  localStorage.setItem('mintedNFTs', JSON.stringify(nfts));
 }
+
 
 export function getMintedNFTs(): MintedNFT[] {
   // ...
