@@ -556,13 +556,10 @@ const handleMint = async () => {
       console.log('💾 Saving mock NFT:', nftData);
       saveMockNFT(nftData);
 
-      // ✅ Save to Firebase (DEV MODE)
-      try {
-        await saveNFTToGallery(nftData);
-        console.log('✅ Mock NFT saved to Firebase gallery!');
-      } catch (err) {
-        console.warn('⚠️ Gallery save failed (non-critical):', err);
-      }
+      // ✅ Save to Firebase (DEV MODE) - Non-blocking
+      saveNFTToGallery(nftData)
+        .then(() => console.log('✅ Mock NFT saved to Firebase!'))
+        .catch(err => console.warn('⚠️ Gallery save failed:', err));
 
       alert('✓ NFT Generated! (DEV MODE - No gas fee)\nTX: ' + mockTxId);
       setTimeout(() => {
@@ -590,39 +587,40 @@ const handleMint = async () => {
 
       const signedTx = await provider.signTransaction(transaction);
       
-      // ✅ OPTION 2: Send TX and redirect IMMEDIATELY (don't wait for confirmation)
+      // ✅ Send TX immediately
       const txId = await connection.sendRawTransaction(signedTx.serialize());
 
       console.log('✅ TX Sent to blockchain:', txId);
 
-const nftData = {
-  walletAddress: walletPubkey,
-  personality: personality,
-  nickname: nickname.trim(),
-  mintedAt: new Date().toISOString(),
-  txId,
-  network: 'carv-svm-testnet',
-  nftImage: nftImageUrl
-};
+      const nftData = {
+        walletAddress: walletPubkey,
+        personality: personality,
+        nickname: nickname.trim(),
+        mintedAt: new Date().toISOString(),
+        txId,
+        network: 'carv-svm-testnet',
+        nftImage: nftImageUrl
+      };
 
       console.log('💾 Saving real NFT:', nftData);
       saveMintedNFT(nftData);
 
-      // ✅ Save to Firebase (PRODUCTION)
-      try {
-  console.log('🔄 Saving NFT to gallery...');
-  await saveNFTToGallery(nftData);  // ← Make sure this line exists!
-  console.log('✅ NFT saved to gallery!');
-} catch (err) {
-  console.error('❌ Failed to save NFT:', err);
-}
+      // ✅ Save to Firebase - NON-BLOCKING (don't await!)
+      console.log('🔄 Saving NFT to gallery in background...');
+      saveNFTToGallery(nftData)
+        .then(() => console.log('✅ NFT saved to Firebase!'))
+        .catch(err => console.error('❌ Gallery save failed:', err));
 
-// Then redirect
-alert('🟢 NFT Minted! TX: ' + txId.slice(0, 20) + '...');
-setTimeout(() => {
-  router.push(`/success?wallet=${walletPubkey}&personality=${personality}&nickname=${nickname}`);
-}, 1500);
+      // ✅ Redirect IMMEDIATELY
+      alert('🟢 NFT Minted! TX: ' + txId.slice(0, 20) + '...');
+      setTimeout(() => {
+        router.push(`/success?wallet=${walletPubkey}&personality=${personality}&nickname=${nickname}`);
+      }, 1000);
 
+      // ✅ Confirm TX in background (non-blocking)
+      connection.confirmTransaction(txId, 'confirmed')
+        .then(() => console.log('✅ Transaction confirmed on blockchain!'))
+        .catch(err => console.warn('⚠️ Confirmation still pending:', err));
     }
   } catch (err: any) {
     console.error('❌ Mint error:', err);
