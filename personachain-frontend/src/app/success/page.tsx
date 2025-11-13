@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getMintedNFTs } from '@/utils/storage';
 import { getMockNFTs } from '@/config/devMode';
