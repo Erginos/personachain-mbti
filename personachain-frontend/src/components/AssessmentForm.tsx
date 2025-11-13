@@ -515,10 +515,11 @@ function ResultsDisplay({
   setNickname: (nick: string) => void;
 }) {
   const description = PERSONALITY_DESCRIPTIONS[personality] || 'A unique personality type.';
-  const [minting, setMinting] = useState(false);
-  const color = personalityColors[personality] || { main: '#a855f7', light: '#c084fc', dark: '#7e22ce' };
+const [minting, setMinting] = useState(false);
+const color = personalityColors[personality] || { main: '#a855f7', light: '#c084fc', dark: '#7e22ce' };
 
-  const handleMint = async () => {
+
+const handleMint = async () => {
   if (!walletPubkey) {
     alert('Please connect your wallet first.');
     return;
@@ -555,7 +556,7 @@ function ResultsDisplay({
       console.log('💾 Saving mock NFT:', nftData);
       saveMockNFT(nftData);
 
-      // ✅ ADD: Save to Firebase (DEV MODE)
+      // ✅ Save to Firebase (DEV MODE)
       try {
         await saveNFTToGallery(nftData);
         console.log('✅ Mock NFT saved to Firebase gallery!');
@@ -588,8 +589,11 @@ function ResultsDisplay({
       transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
       const signedTx = await provider.signTransaction(transaction);
+      
+      // ✅ OPTION 2: Send TX and redirect IMMEDIATELY (don't wait for confirmation)
       const txId = await connection.sendRawTransaction(signedTx.serialize());
-      await connection.confirmTransaction(txId, 'confirmed');
+
+      console.log('✅ TX Sent to blockchain:', txId);
 
       const nftData = {
         walletAddress: walletPubkey,
@@ -604,7 +608,7 @@ function ResultsDisplay({
       console.log('💾 Saving real NFT:', nftData);
       saveMintedNFT(nftData);
 
-      // ✅ ADD: Save to Firebase (PRODUCTION)
+      // ✅ Save to Firebase (PRODUCTION)
       try {
         await saveNFTToGallery(nftData);
         console.log('✅ NFT saved to Firebase gallery!');
@@ -613,11 +617,22 @@ function ResultsDisplay({
         // Don't fail transaction if gallery save fails
       }
 
-      alert('🟢 NFT Minted! TX: ' + txId.slice(0, 20) + '...');
+      // ✅ Show success alert
+      alert('🟢 NFT Minting Started! TX: ' + txId.slice(0, 20) + '...');
 
+      // ✅ REDIRECT IMMEDIATELY (no blocking)
       setTimeout(() => {
         router.push(`/success?wallet=${walletPubkey}`);
-      }, 1000);
+      }, 1500);
+
+      // ✅ Continue confirmation in background (non-blocking)
+      connection.confirmTransaction(txId, 'confirmed')
+        .then(() => {
+          console.log('✅ Transaction fully confirmed!');
+        })
+        .catch(e => {
+          console.warn('⚠️ Confirmation still pending:', e);
+        });
     }
   } catch (err: any) {
     console.error('❌ Mint error:', err);
