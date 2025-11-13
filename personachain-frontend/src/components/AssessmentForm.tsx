@@ -362,11 +362,11 @@ export default function AssessmentForm() {
                     e.currentTarget.style.transform = 'translateX(0)';
                   }}
                 >
-                  <span>
-                    {['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][idx]}
-                  </span>
-                  <span style={{ fontSize: '0.875rem', opacity: 0.7 }}>{score}</span>
-                </button>
+                <span>
+                 {['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][idx]}
+               </span>   
+              </button>
+              
               ))}
             </div>
           </div>
