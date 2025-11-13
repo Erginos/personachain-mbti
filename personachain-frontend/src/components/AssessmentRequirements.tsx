@@ -1,10 +1,10 @@
 'use client';
 
 interface AssessmentRequirementsProps {
-  onComplete?: (allChecked: boolean) => void;
 }
 
-export default function AssessmentRequirements({ onComplete }: AssessmentRequirementsProps) {
+export default function AssessmentRequirements() {
+
   return (
     <div style={{
       background: 'rgba(168, 85, 247, 0.08)',
