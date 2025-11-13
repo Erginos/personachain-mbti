@@ -1,8 +1,5 @@
 'use client';
 
-interface AssessmentRequirementsProps {
-}
-
 export default function AssessmentRequirements() {
 
   return (
