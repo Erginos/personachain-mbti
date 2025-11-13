@@ -31,23 +31,8 @@ export default function AssessmentRequirements() {
           <li style={{ marginBottom: '0.5rem' }}>
             ✓ Connected to CARV Testnet (RPC: rpc.testnet.carv.io)
           </li>
-          <li style={{ marginBottom: '0.5rem' }}>
-            ✓ CARV testnet tokens (
-            <a
-              href="https://faucet.carv.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                color: '#a855f7',
-                textDecoration: 'underline',
-              }}
-            >
-              get from faucet
-            </a>
-            )
-          </li>
           <li>
-            ✓ At least 0.01 SOL for gas fees
+            ✓ At least 0.001 SOL for gas fees
           </li>
         </ul>
       </div>

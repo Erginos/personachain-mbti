@@ -595,44 +595,34 @@ const handleMint = async () => {
 
       console.log('✅ TX Sent to blockchain:', txId);
 
-      const nftData = {
-        walletAddress: walletPubkey,
-        personality: personality,
-        nickname: nickname.trim(),
-        mintedAt: new Date().toISOString(),
-        txId,
-        network: 'carv-svm-testnet',
-        nftImage: nftImageUrl
-      };
+const nftData = {
+  walletAddress: walletPubkey,
+  personality: personality,
+  nickname: nickname.trim(),
+  mintedAt: new Date().toISOString(),
+  txId,
+  network: 'carv-svm-testnet',
+  nftImage: nftImageUrl
+};
 
       console.log('💾 Saving real NFT:', nftData);
       saveMintedNFT(nftData);
 
       // ✅ Save to Firebase (PRODUCTION)
       try {
-        await saveNFTToGallery(nftData);
-        console.log('✅ NFT saved to Firebase gallery!');
-      } catch (err) {
-        console.warn('⚠️ Gallery save failed (non-critical):', err);
-        // Don't fail transaction if gallery save fails
-      }
+  console.log('🔄 Saving NFT to gallery...');
+  await saveNFTToGallery(nftData);  // ← Make sure this line exists!
+  console.log('✅ NFT saved to gallery!');
+} catch (err) {
+  console.error('❌ Failed to save NFT:', err);
+}
 
-      // ✅ Show success alert
-      alert('🟢 NFT Minting Started! TX: ' + txId.slice(0, 20) + '...');
+// Then redirect
+alert('🟢 NFT Minted! TX: ' + txId.slice(0, 20) + '...');
+setTimeout(() => {
+  router.push(`/success?wallet=${walletPubkey}&personality=${personality}&nickname=${nickname}`);
+}, 1500);
 
-      // ✅ REDIRECT IMMEDIATELY (no blocking)
-      setTimeout(() => {
-        router.push(`/success?wallet=${walletPubkey}`);
-      }, 1500);
-
-      // ✅ Continue confirmation in background (non-blocking)
-      connection.confirmTransaction(txId, 'confirmed')
-        .then(() => {
-          console.log('✅ Transaction fully confirmed!');
-        })
-        .catch(e => {
-          console.warn('⚠️ Confirmation still pending:', e);
-        });
     }
   } catch (err: any) {
     console.error('❌ Mint error:', err);
