@@ -5,6 +5,8 @@ import { saveMintedNFT } from '@/utils/storage';
 import { CARV_RPC } from '@/config/programs';
 import { PublicKey, Connection, Transaction, SystemProgram } from '@solana/web3.js';
 import { useState, useEffect } from 'react';
+import AssessmentRequirements from '@/components/AssessmentRequirements';
+import { saveNFTToGallery } from '@/lib/firebase';
 
 // NFT Generation imports
 import { generateNFTImage } from '@/utils/nftGenerator';
@@ -205,7 +207,7 @@ export default function AssessmentForm() {
               color: '#cbd5e1',
               fontSize: '1rem',
             }}>
-              Please connect a Solana wallet (Backpack or Phantom recommended).
+              Please connect a Solana Testnet wallet (Backpack or Phantom recommended).
             </p>
             <div style={{
               display: 'flex',
@@ -445,6 +447,24 @@ export default function AssessmentForm() {
         {renderContent()}
       </div>
 
+      {/* BOTTOM NOTIFICATION - AssessmentRequirements */}
+      {!result && !walletPubkey && (  // ← ADD walletPubkey check
+  <div style={{
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    background: 'transparent',
+    backdropFilter: 'blur(10px)',
+    padding: '1.5rem',
+    zIndex: 2,
+  }}>
+    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <AssessmentRequirements />
+    </div>
+  </div>
+)}
+
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
@@ -499,94 +519,114 @@ function ResultsDisplay({
   const color = personalityColors[personality] || { main: '#a855f7', light: '#c084fc', dark: '#7e22ce' };
 
   const handleMint = async () => {
-    if (!walletPubkey) {
-      alert('Please connect your wallet first.');
-      return;
-    }
+  if (!walletPubkey) {
+    alert('Please connect your wallet first.');
+    return;
+  }
 
-    if (!nickname.trim()) {
-      alert('Please enter a nickname for your NFT!');
-      return;
-    }
+  if (!nickname.trim()) {
+    alert('Please enter a nickname for your NFT!');
+    return;
+  }
 
-    setMinting(true);
-    try {
-      console.log('📸 Generating NFT image...');
-      const nftImageUrl = await generateNFTImage({
+  setMinting(true);
+  try {
+    console.log('📸 Generating NFT image...');
+    const nftImageUrl = await generateNFTImage({
+      personality: personality,
+      nickname: nickname.trim(),
+      walletAddress: walletPubkey,
+      network: 'CARV SVM'
+    });
+    console.log('✅ NFT image generated!');
+
+    if (DEV_MODE) {
+      console.log('🟡 DEV MODE: Simulating NFT mint...');
+      const mockTxId = generateMockTxId();
+      const nftData = {
+        walletAddress: walletPubkey,
         personality: personality,
         nickname: nickname.trim(),
-        walletAddress: walletPubkey,
-        network: 'CARV SVM'
-      });
-      console.log('✅ NFT image generated!');
+        mintedAt: new Date().toISOString(),
+        txId: mockTxId,
+        network: 'carv-svm-testnet',
+        nftImage: nftImageUrl
+      };
+      console.log('💾 Saving mock NFT:', nftData);
+      saveMockNFT(nftData);
 
-      if (DEV_MODE) {
-        console.log('🟡 DEV MODE: Simulating NFT mint...');
-        const mockTxId = generateMockTxId();
-        const nftData = {
-          walletAddress: walletPubkey,
-          personality: personality,
-          nickname: nickname.trim(),
-          mintedAt: new Date().toISOString(),
-          txId: mockTxId,
-          network: 'carv-svm-testnet',
-          nftImage: nftImageUrl
-        };
-        console.log('💾 Saving mock NFT:', nftData);
-        saveMockNFT(nftData);
-        alert('✓ NFT Generated! (DEV MODE - No gas fee)\nTX: ' + mockTxId);
-        setTimeout(() => {
-          router.push(`/success?wallet=${walletPubkey}&devMode=true`);
-        }, 1000);
-      } else {
-        console.log('🟢 PRODUCTION: Minting real NFT...');
-        const connection = new Connection(CARV_RPC, 'confirmed');
-        const provider = getProvider();
-
-        if (!provider) {
-          throw new Error('No wallet provider');
-        }
-
-        const transaction = new Transaction().add(
-          SystemProgram.transfer({
-            fromPubkey: new PublicKey(walletPubkey),
-            toPubkey: new PublicKey(walletPubkey),
-            lamports: 0,
-          })
-        );
-
-        transaction.feePayer = new PublicKey(walletPubkey);
-        transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-
-        const signedTx = await provider.signTransaction(transaction);
-        const txId = await connection.sendRawTransaction(signedTx.serialize());
-        await connection.confirmTransaction(txId, 'confirmed');
-
-        const nftData = {
-          walletAddress: walletPubkey,
-          personality: personality,
-          nickname: nickname.trim(),
-          mintedAt: new Date().toISOString(),
-          txId,
-          network: 'carv-svm-testnet',
-          nftImage: nftImageUrl
-        };
-
-        console.log('💾 Saving real NFT:', nftData);
-        saveMintedNFT(nftData);
-        alert('🟢 NFT Minted! TX: ' + txId.slice(0, 20) + '...');
-
-        setTimeout(() => {
-          router.push(`/success?wallet=${walletPubkey}`);
-        }, 1000);
+      // ✅ ADD: Save to Firebase (DEV MODE)
+      try {
+        await saveNFTToGallery(nftData);
+        console.log('✅ Mock NFT saved to Firebase gallery!');
+      } catch (err) {
+        console.warn('⚠️ Gallery save failed (non-critical):', err);
       }
-    } catch (err: any) {
-      console.error('❌ Mint error:', err);
-      alert('Error: ' + (err?.message || err));
-    } finally {
-      setMinting(false);
+
+      alert('✓ NFT Generated! (DEV MODE - No gas fee)\nTX: ' + mockTxId);
+      setTimeout(() => {
+        router.push(`/success?wallet=${walletPubkey}&devMode=true`);
+      }, 1000);
+    } else {
+      console.log('🟢 PRODUCTION: Minting real NFT...');
+      const connection = new Connection(CARV_RPC, 'confirmed');
+      const provider = getProvider();
+
+      if (!provider) {
+        throw new Error('No wallet provider');
+      }
+
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: new PublicKey(walletPubkey),
+          toPubkey: new PublicKey(walletPubkey),
+          lamports: 0,
+        })
+      );
+
+      transaction.feePayer = new PublicKey(walletPubkey);
+      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+      const signedTx = await provider.signTransaction(transaction);
+      const txId = await connection.sendRawTransaction(signedTx.serialize());
+      await connection.confirmTransaction(txId, 'confirmed');
+
+      const nftData = {
+        walletAddress: walletPubkey,
+        personality: personality,
+        nickname: nickname.trim(),
+        mintedAt: new Date().toISOString(),
+        txId,
+        network: 'carv-svm-testnet',
+        nftImage: nftImageUrl
+      };
+
+      console.log('💾 Saving real NFT:', nftData);
+      saveMintedNFT(nftData);
+
+      // ✅ ADD: Save to Firebase (PRODUCTION)
+      try {
+        await saveNFTToGallery(nftData);
+        console.log('✅ NFT saved to Firebase gallery!');
+      } catch (err) {
+        console.warn('⚠️ Gallery save failed (non-critical):', err);
+        // Don't fail transaction if gallery save fails
+      }
+
+      alert('🟢 NFT Minted! TX: ' + txId.slice(0, 20) + '...');
+
+      setTimeout(() => {
+        router.push(`/success?wallet=${walletPubkey}`);
+      }, 1000);
     }
-  };
+  } catch (err: any) {
+    console.error('❌ Mint error:', err);
+    alert('Error: ' + (err?.message || err));
+  } finally {
+    setMinting(false);
+  }
+};
+
 
   return (
     <div style={{

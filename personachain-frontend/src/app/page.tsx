@@ -2,9 +2,12 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { getNFTGallery, NFTGalleryData } from '@/lib/firebase';
 
 export default function Home() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [nfts, setNfts] = useState<(NFTGalleryData & { id: string })[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -16,6 +19,17 @@ export default function Home() {
 
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  // Fetch NFT Gallery
+  useEffect(() => {
+    const fetchNFTs = async () => {
+      setLoading(true);
+      const galleryNFTs = await getNFTGallery(50);
+      setNfts(galleryNFTs);
+      setLoading(false);
+    };
+    fetchNFTs();
   }, []);
 
   return (
@@ -317,14 +331,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* OUR PORTFOLIO SECTION */}
-      <section className="section our-portfolio" style={{
+      {/* HALL OF PERSONALITIES SECTION - AUTO SCROLL */}
+      <section className="section hall-of-personalities" style={{
         padding: '6rem 2rem',
         background: '#0a0e17',
         position: 'relative',
       }}>
         <div className="container" style={{
-          maxWidth: '1200px',
+          maxWidth: '1400px',
           margin: '0 auto',
         }}>
           {/* Section Header */}
@@ -349,32 +363,132 @@ export default function Home() {
             }}>
               Hall of Personalities
             </h2>
+            <p style={{
+              fontSize: '1.125rem',
+              color: '#94a3b8',
+              marginTop: '1rem',
+            }}>
+              Discover all PersonaChain NFTs minted by the community
+            </p>
             <div style={{
               width: '60px',
               height: '3px',
               background: 'linear-gradient(90deg, transparent, #c8a882, transparent)',
-              margin: '0 auto',
+              margin: '2rem auto 0',
             }}></div>
           </div>
 
-          {/* Portfolio Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '2rem',
-            maxWidth: '1400px',
-            margin: '0 auto',
-          }}>
+          {/* AUTO-SCROLL CAROUSEL */}
+          {loading && (
             <div style={{
-              gridColumn: '1 / -1',
               textAlign: 'center',
-              padding: '4rem',
+              padding: '4rem 2rem',
               color: '#94a3b8',
             }}>
-              <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>No NFTs minted yet</p>
-              <p style={{ fontSize: '0.875rem' }}>Be the first to mint your personality NFT!</p>
+              <p>Loading gallery...</p>
             </div>
-          </div>
+          )}
+
+          {!loading && nfts.length > 0 && (
+            <div style={{
+              position: 'relative',
+              overflow: 'hidden',
+              background: 'linear-gradient(90deg, rgba(10, 14, 23, 0.8) 0%, transparent 10%, transparent 90%, rgba(10, 14, 23, 0.8) 100%)',
+              borderRadius: '12px',
+              padding: '2rem 0',
+            }}>
+              {/* Carousel Wrapper */}
+              <div style={{
+                display: 'flex',
+                animation: 'scroll-left 60s linear infinite',
+                gap: '2rem',
+                paddingRight: '2rem',
+                paddingLeft: '2rem',
+              }}>
+                {/* Duplicate NFTs for seamless infinite loop */}
+                {[...nfts, ...nfts].map((nft, idx) => (
+                  <div
+                    key={`${nft.id}-${idx}`}
+                    style={{
+                      minWidth: '220px',
+                      flexShrink: 0,
+                      background: '#1f2937',
+                      border: '1px solid rgba(168, 85, 247, 0.2)',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      transition: 'all 0.3s ease',
+                      cursor: 'default',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)';
+                      e.currentTarget.style.boxShadow = '0 10px 30px rgba(168, 85, 247, 0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.2)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    {/* NFT Image */}
+                    <div style={{
+                      width: '100%',
+                      aspectRatio: '1',
+                      overflow: 'hidden',
+                      background: '#111827',
+                    }}>
+                      <img
+                        src={nft.nftImage}
+                        alt={nft.nickname}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                      />
+                    </div>
+
+                    {/* Info */}
+                    <div style={{ padding: '1.5rem' }}>
+                      <h3 style={{
+                        fontSize: '1.125rem',
+                        fontWeight: 'bold',
+                        marginBottom: '0.5rem',
+                        color: '#fff',
+                        wordBreak: 'break-word',
+                      }}>
+                        {nft.nickname}
+                      </h3>
+                      <p style={{
+                        fontSize: '0.875rem',
+                        color: '#a855f7',
+                        fontWeight: '600',
+                        marginBottom: '0.75rem',
+                      }}>
+                        {nft.personality}
+                      </p>
+                      <p style={{
+                        fontSize: '0.75rem',
+                        color: '#64748b',
+                      }}>
+                        {new Date(nft.mintedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!loading && nfts.length === 0 && (
+            <div style={{
+              textAlign: 'center',
+              padding: '4rem 2rem',
+              color: '#94a3b8',
+            }}>
+              <p style={{ fontSize: '1.125rem' }}>
+                No NFTs minted yet. Be the first! 🎨
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -423,6 +537,29 @@ export default function Home() {
           }
           to {
             opacity: 1;
+          }
+        }
+
+        @keyframes scroll-left {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+
+        @media (max-width: 768px) {
+          div[style*="gridTemplateColumns: '1fr 1fr'"] {
+            grid-template-columns: 1fr !important;
+          }
+          
+          h1 {
+            font-size: 2.5rem !important;
+          }
+          
+          h2 {
+            font-size: 1.75rem !important;
           }
         }
       `}</style>
