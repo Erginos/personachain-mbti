@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getMintedNFTs } from '@/utils/storage';
 import { getMockNFTs } from '@/config/devMode';
@@ -516,6 +516,13 @@ export default function SuccessPage({ searchParams }) {
   }, []);
 
   return (
+    <div>
+      {mintStatus === 'pending' && <p>Minting in progress, please wait...</p>}
+      {mintStatus === 'minted' && <p>Mint successful! 🎉</p>}
+      {mintStatus === 'failed' && <p>Mint failed. Please try again later.</p>}
+    </div>
+  );
+}
     <div>
       {mintStatus === 'pending' && <p>Minting in progress, please wait...</p>}
       {mintStatus === 'minted' && <p>Mint successful! 🎉</p>}
