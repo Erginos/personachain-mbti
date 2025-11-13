@@ -499,26 +499,27 @@ function SuccessContent() {
   );
 }
 
-export default function SuccessPage() {
-  return (
-    <Suspense
-      fallback={
-        <div style={{
-          minHeight: '100vh',
-          background: '#0a0e17',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⏳</div>
-            <p style={{ fontSize: '1.125rem' }}>Loading your NFT...</p>
-          </div>
-        </div>
+export default function SuccessPage({ searchParams }) {
+  const { wallet, personality, nickname } = searchParams;
+  const [mintStatus, setMintStatus] = useState('pending');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // Start minting asynchronously (without blocking)
+        await startMintTransaction({ wallet, personality, nickname });
+        setMintStatus('minted');
+      } catch {
+        setMintStatus('failed');
       }
-    >
-      <SuccessContent />
-    </Suspense>
+    })();
+  }, []);
+
+  return (
+    <div>
+      {mintStatus === 'pending' && <p>Minting in progress, please wait...</p>}
+      {mintStatus === 'minted' && <p>Mint successful! 🎉</p>}
+      {mintStatus === 'failed' && <p>Mint failed. Please try again later.</p>}
+    </div>
   );
 }
