@@ -156,6 +156,13 @@ export async function generateNFTImage(params: NFTGeneratorParams): Promise<stri
 }
 
 // Helper function to draw rounded rectangles
+interface RoundCorners {
+  tl: number;
+  tr: number;
+  br: number;
+  bl: number;
+}
+
 function roundRect(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -164,21 +171,23 @@ function roundRect(
   h: number,
   r: number | number[]
 ) {
+  let corners: RoundCorners;
+  
   if (typeof r === 'number') {
-    r = { tl: r, tr: r, br: r, bl: r };
+    corners = { tl: r, tr: r, br: r, bl: r };
   } else {
-    r = { tl: r[0], tr: r[1], br: r[2], bl: r[3] };
+    corners = { tl: r[0], tr: r[1], br: r[2], bl: r[3] };
   }
 
   ctx.beginPath();
-  ctx.moveTo(x + r.tl, y);
-  ctx.lineTo(x + w - r.tr, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r.tr);
-  ctx.lineTo(x + w, y + h - r.br);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
-  ctx.lineTo(x + r.bl, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r.bl);
-  ctx.lineTo(x, y + r.tl);
-  ctx.quadraticCurveTo(x, y, x + r.tl, y);
+  ctx.moveTo(x + corners.tl, y);
+  ctx.lineTo(x + w - corners.tr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + corners.tr);
+  ctx.lineTo(x + w, y + h - corners.br);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - corners.br, y + h);
+  ctx.lineTo(x + corners.bl, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - corners.bl);
+  ctx.lineTo(x, y + corners.tl);
+  ctx.quadraticCurveTo(x, y, x + corners.tl, y);
   ctx.closePath();
 }
