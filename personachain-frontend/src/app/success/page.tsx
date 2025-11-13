@@ -210,8 +210,7 @@ function SuccessContent() {
                       height: '100%',
                       borderRadius: '16px',
                       objectFit: 'contain',
-                    boxShadow: `0 20px 60px ${color.main}30, 0 0 80px ${color.main}20`,  // ✅ color is available here
-                      objectFit: 'contain',
+                      boxShadow: `0 20px 60px ${color.main}30, 0 0 80px ${color.main}20`,  // ✅ color is available here
                   }}
                 />
               </div>
