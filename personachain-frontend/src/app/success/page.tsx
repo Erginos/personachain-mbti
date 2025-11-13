@@ -1,11 +1,11 @@
-'use client';
+//'use client';
 
-import { useEffect, useState, } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getMintedNFTs } from '@/utils/storage';
 import { getMockNFTs } from '@/config/devMode';
 
-export const dynamic = 'force-dynamic';  // ✅ ADD THIS LINE
+export const dynamic = 'force-dynamic';
 
 export default function SuccessPage() {
   const searchParams = useSearchParams();
