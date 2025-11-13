@@ -523,10 +523,3 @@ export default function SuccessPage({ searchParams }) {
     </div>
   );
 }
-    <div>
-      {mintStatus === 'pending' && <p>Minting in progress, please wait...</p>}
-      {mintStatus === 'minted' && <p>Mint successful! 🎉</p>}
-      {mintStatus === 'failed' && <p>Mint failed. Please try again later.</p>}
-    </div>
-  );
-}
