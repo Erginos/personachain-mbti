@@ -1,95 +1,184 @@
-export interface NFTMetadata {
-  name: string;
-  symbol: string;
-  description: string;
-  image: string;
-  attributes: Array<{
-    trait_type: string;
-    value: string;
-  }>;
+export interface NFTGeneratorParams {
+  personality: string;
+  nickname: string;
+  walletAddress: string;
+  network?: string;
 }
 
-const PERSONALITY_COLORS: { [key: string]: string } = {
-  'INTJ': '#2E1A47',
-  'INTP': '#1B3A6B',
-  'ENTJ': '#4A1A1A',
-  'ENTP': '#1A4A3A',
-  'INFJ': '#3A1A4A',
-  'INFP': '#1A3A6B',
-  'ENFJ': '#4A3A1A',
-  'ENFP': '#1A4A2A',
-  'ISTJ': '#2A1A3A',
-  'ISFJ': '#1A2A5A',
-  'ESTJ': '#3A2A1A',
-  'ESFJ': '#1A3A2A',
-  'ISTP': '#2A2A1A',
-  'ISFP': '#1A2A3A',
-  'ESTP': '#3A1A2A',
-  'ESFP': '#2A3A1A',
+export interface PersonalityColorSet {
+  main: string;
+  light: string;
+  dark: string;
+  gradient1: string;
+  gradient2: string;
+}
+
+// UPDATED: Temperament-based color grouping (matches Assessment)
+const personalityColors: { [key: string]: PersonalityColorSet } = {
+  // GREEN GROUP: INFP, ENFP, INFJ, ENFJ (NF - Idealists)
+  'INFP': { main: '#22c55e', light: '#4ade80', dark: '#15803d', gradient1: '#22c55e', gradient2: '#15803d' },
+  'ENFP': { main: '#22c55e', light: '#4ade80', dark: '#15803d', gradient1: '#22c55e', gradient2: '#15803d' },
+  'INFJ': { main: '#22c55e', light: '#4ade80', dark: '#15803d', gradient1: '#22c55e', gradient2: '#15803d' },
+  'ENFJ': { main: '#22c55e', light: '#4ade80', dark: '#15803d', gradient1: '#22c55e', gradient2: '#15803d' },
+
+  // PURPLE GROUP: INTJ, ENTJ, INTP, ENTP (NT - Rationals)
+  'INTJ': { main: '#a855f7', light: '#c084fc', dark: '#7e22ce', gradient1: '#a855f7', gradient2: '#7e22ce' },
+  'ENTJ': { main: '#a855f7', light: '#c084fc', dark: '#7e22ce', gradient1: '#a855f7', gradient2: '#7e22ce' },
+  'INTP': { main: '#a855f7', light: '#c084fc', dark: '#7e22ce', gradient1: '#a855f7', gradient2: '#7e22ce' },
+  'ENTP': { main: '#a855f7', light: '#c084fc', dark: '#7e22ce', gradient1: '#a855f7', gradient2: '#7e22ce' },
+
+  // BLUE GROUP: ISTJ, ESTJ, ISFJ, ESFJ (SJ - Guardians)
+  'ISTJ': { main: '#3b82f6', light: '#60a5fa', dark: '#1e40af', gradient1: '#3b82f6', gradient2: '#1e40af' },
+  'ESTJ': { main: '#3b82f6', light: '#60a5fa', dark: '#1e40af', gradient1: '#3b82f6', gradient2: '#1e40af' },
+  'ISFJ': { main: '#3b82f6', light: '#60a5fa', dark: '#1e40af', gradient1: '#3b82f6', gradient2: '#1e40af' },
+  'ESFJ': { main: '#3b82f6', light: '#60a5fa', dark: '#1e40af', gradient1: '#3b82f6', gradient2: '#1e40af' },
+
+  // YELLOW GROUP: ESFP, ISFP, ESTP, ISTP (SP - Artisans)
+  'ESFP': { main: '#eab308', light: '#facc15', dark: '#a16207', gradient1: '#eab308', gradient2: '#a16207' },
+  'ISFP': { main: '#eab308', light: '#facc15', dark: '#a16207', gradient1: '#eab308', gradient2: '#a16207' },
+  'ESTP': { main: '#eab308', light: '#facc15', dark: '#a16207', gradient1: '#eab308', gradient2: '#a16207' },
+  'ISTP': { main: '#eab308', light: '#facc15', dark: '#a16207', gradient1: '#eab308', gradient2: '#a16207' },
 };
 
-export function generateNFTImage(personality: string): string {
-  const color = PERSONALITY_COLORS[personality] || '#1A1A2E';
-  
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">
-      <!-- Background -->
-      <rect width="1000" height="1000" fill="${color}"/>
-      
-      <!-- Gradient overlay -->
-      <defs>
-        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.1" />
-          <stop offset="100%" style="stop-color:#000000;stop-opacity:0.2" />
-        </linearGradient>
-      </defs>
-      <rect width="1000" height="1000" fill="url(#grad)"/>
-      
-      <!-- Border -->
-      <rect x="20" y="20" width="960" height="960" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.3"/>
-      
-      <!-- Personality Type (Large) -->
-      <text x="500" y="450" font-family="Arial, sans-serif" font-size="180" font-weight="bold" 
-            text-anchor="middle" fill="#ffffff" opacity="0.9">
-        ${personality}
-      </text>
-      
-      <!-- Label -->
-      <text x="500" y="650" font-family="Arial, sans-serif" font-size="40" 
-            text-anchor="middle" fill="#ffffff" opacity="0.7">
-        PersonaChain NFT
-      </text>
-      
-      <!-- Beta Badge -->
-      <rect x="650" y="850" width="300" height="100" rx="20" fill="#FFD700" opacity="0.8"/>
-      <text x="800" y="920" font-family="Arial, sans-serif" font-size="48" font-weight="bold" 
-            text-anchor="middle" fill="#000000">
-        BETA
-      </text>
-    </svg>
-  `;
+export async function generateNFTImage(params: NFTGeneratorParams): Promise<string> {
+  const { personality, nickname, walletAddress, network = 'CARV SVM' } = params;
+  const colors = personalityColors[personality] || personalityColors['INTJ'];
 
-  // Convert SVG to base64
-  const base64 = Buffer.from(svg).toString('base64');
-  return `data:image/svg+xml;base64,${base64}`;
+  // Create canvas - 3D card proportions (4:5 ratio)
+  const width = 400;
+  const height = 550;
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d')!;
+
+  // 1. BACKGROUND GRADIENT
+  const bgGradient = ctx.createLinearGradient(0, 0, width, height);
+  bgGradient.addColorStop(0, '#0f1419');
+  bgGradient.addColorStop(0.5, '#1a2a3a');
+  bgGradient.addColorStop(1, '#0a0e17');
+  ctx.fillStyle = bgGradient;
+  ctx.fillRect(0, 0, width, height);
+
+  // 2. CARD BACKGROUND (Dark navy with color accent)
+  const cardX = 30;
+  const cardY = 50;
+  const cardW = 340;
+  const cardH = 450;
+  const cardRadius = 16;
+
+  // Draw rounded card
+  ctx.fillStyle = 'rgba(15, 20, 25, 0.9)';
+  roundRect(ctx, cardX, cardY, cardW, cardH, cardRadius);
+  ctx.fill();
+
+  // Card border glow with pink accent
+  ctx.strokeStyle = colors.main + '60';
+  ctx.lineWidth = 2;
+  roundRect(ctx, cardX, cardY, cardW, cardH, cardRadius);
+  ctx.stroke();
+
+  // 3. TOP ACCENT LINE (Color gradient)
+  const topLineHeight = 6;
+  const accentGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY);
+  accentGrad.addColorStop(0, colors.gradient1);
+  accentGrad.addColorStop(1, colors.gradient2);
+  ctx.fillStyle = accentGrad;
+  roundRect(ctx, cardX, cardY, cardW, topLineHeight, [cardRadius, cardRadius, 0, 0]);
+  ctx.fill();
+
+  // 4. PERSONALITY TYPE (LARGE CENTER)
+  ctx.font = 'bold 72px Arial, sans-serif';
+  ctx.fillStyle = colors.main;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = colors.main + '80';
+  ctx.shadowBlur = 20;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.fillText(personality, width / 2, 160);
+  ctx.shadowColor = 'transparent';
+
+  // 5. PERSONALITY LABEL
+  ctx.font = 'normal 12px Arial, sans-serif';
+  ctx.fillStyle = '#94a3b8';
+  ctx.textAlign = 'center';
+  ctx.fillText('PERSONALITY TYPE', width / 2, 200);
+
+  // 6. NICKNAME
+  ctx.font = 'bold 18px Arial, sans-serif';
+  ctx.fillStyle = '#e2e8f0';
+  const displayNickname = nickname.substring(0, 20);
+  ctx.fillText(displayNickname, width / 2, 250);
+
+  // 7. DIVIDER LINE
+  ctx.strokeStyle = colors.main + '40';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cardX + 20, 280);
+  ctx.lineTo(cardX + cardW - 20, 280);
+  ctx.stroke();
+
+  // 8. COLLECTION INFO
+  ctx.font = 'bold 11px Arial, sans-serif';
+  ctx.fillStyle = colors.main;
+  ctx.textAlign = 'left';
+  ctx.fillText('PERSONACHAIN COLLECTION', cardX + 20, 320);
+
+  ctx.font = 'normal 10px Arial, sans-serif';
+  ctx.fillStyle = '#cbd5e1';
+  ctx.fillText(network, cardX + 20, 340);
+
+  // 9. WALLET ADDRESS (shortened)
+  ctx.font = 'normal 9px monospace';
+  ctx.fillStyle = '#94a3b8';
+  const shortWallet = walletAddress.slice(0, 8) + '...' + walletAddress.slice(-6);
+  ctx.fillText(shortWallet, cardX + 20, 365);
+
+  // 10. FOOTER TEXT
+  ctx.font = 'normal 8px Arial, sans-serif';
+  ctx.fillStyle = '#64748b';
+  ctx.textAlign = 'center';
+  ctx.fillText('🔗 Verified on Solana Blockchain', width / 2, 410);
+
+  // 11. DECORATIVE ELEMENTS
+  // Gradient circles (subtle background)
+  const circleGrad = ctx.createRadialGradient(width, 0, 0, width, 0, 300);
+  circleGrad.addColorStop(0, colors.main + '10');
+  circleGrad.addColorStop(1, colors.main + '00');
+  ctx.fillStyle = circleGrad;
+  ctx.beginPath();
+  ctx.arc(width, 0, 300, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Convert to data URL
+  return canvas.toDataURL('image/png');
 }
 
-export function generateNFTMetadata(walletAddress: string, personality: string): NFTMetadata {
-  const imageDataUrl = generateNFTImage(personality);
+// Helper function to draw rounded rectangles
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number | number[]
+) {
+  if (typeof r === 'number') {
+    r = { tl: r, tr: r, br: r, bl: r };
+  } else {
+    r = { tl: r[0], tr: r[1], br: r[2], bl: r[3] };
+  }
 
-  return {
-    name: `PersonaChain ${personality}`,
-    symbol: 'PERSONA',
-    description: `Your MBTI Personality Type: ${personality}. Minted on PersonaChain - A Web3 personality assessment NFT platform.`,
-    image: imageDataUrl,
-    attributes: [
-      { trait_type: 'Type', value: personality },
-      { trait_type: 'Owner', value: walletAddress.slice(0, 6) + '...' + walletAddress.slice(-4) },
-      { trait_type: 'Version', value: 'Beta' },
-      { trait_type: 'Dimension 1', value: personality[0] },
-      { trait_type: 'Dimension 2', value: personality[1] },
-      { trait_type: 'Dimension 3', value: personality[2] },
-      { trait_type: 'Dimension 4', value: personality[3] },
-    ],
-  };
+  ctx.beginPath();
+  ctx.moveTo(x + r.tl, y);
+  ctx.lineTo(x + w - r.tr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+  ctx.lineTo(x + w, y + h - r.br);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+  ctx.lineTo(x + r.bl, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+  ctx.lineTo(x, y + r.tl);
+  ctx.quadraticCurveTo(x, y, x + r.tl, y);
+  ctx.closePath();
 }
