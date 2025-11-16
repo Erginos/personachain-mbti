@@ -96,7 +96,7 @@ export default function Home() {
             transition: 'transform 0.3s ease',
           }}></div>
         </div>
-
+          
         {/* Hero Content */}
         <div className="hero-content" style={{
           position: 'relative',
@@ -400,7 +400,7 @@ export default function Home() {
               {/* Carousel Wrapper */}
               <div style={{
                 display: 'flex',
-                animation: 'scroll-left 60s linear infinite',
+                animation: 'scroll-left 25s linear infinite',
                 gap: '2rem',
                 paddingRight: '2rem',
                 paddingLeft: '2rem',

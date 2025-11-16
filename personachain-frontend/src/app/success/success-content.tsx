@@ -6,6 +6,7 @@ import { getMintedNFTs } from '@/utils/storage';
 import { getMockNFTs } from '@/config/devMode';
 
 export function SuccessContent() {
+    
   const searchParams = useSearchParams();
   const wallet = searchParams.get('wallet');
   const devMode = searchParams.get('devMode') === 'true';

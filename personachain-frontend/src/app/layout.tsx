@@ -1,11 +1,8 @@
-import type { Metadata } from "next";
-import { WalletProvider } from "@/context/WalletContext";
-import "./globals.css";
+'use client';
 
-export const metadata: Metadata = {
-  title: "PersonaChain",
-  description: "Discover your personality on-chain",
-};
+import "./globals.css";
+import { WalletProvider } from "@/context/WalletContext";
+import Navigation from "@/components/Navigation";
 
 export default function RootLayout({
   children,
@@ -16,6 +13,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <WalletProvider>
+          <Navigation />
           {children}
         </WalletProvider>
       </body>

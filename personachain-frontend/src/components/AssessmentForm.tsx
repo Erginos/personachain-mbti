@@ -62,25 +62,18 @@ const PERSONALITY_DESCRIPTIONS: { [key: string]: string } = {
 };
 
 const personalityColors: { [key: string]: { main: string; light: string; dark: string } } = {
-  // GREEN GROUP: INFP, ENFP, INFJ, ENFJ (NF - Idealists)
   'INFP': { main: '#22c55e', light: '#4ade80', dark: '#15803d' },
   'ENFP': { main: '#22c55e', light: '#4ade80', dark: '#15803d' },
   'INFJ': { main: '#22c55e', light: '#4ade80', dark: '#15803d' },
   'ENFJ': { main: '#22c55e', light: '#4ade80', dark: '#15803d' },
-
-  // PURPLE GROUP: INTJ, ENTJ, INTP, ENTP (NT - Rationals)
   'INTJ': { main: '#a855f7', light: '#c084fc', dark: '#7e22ce' },
   'ENTJ': { main: '#a855f7', light: '#c084fc', dark: '#7e22ce' },
   'INTP': { main: '#a855f7', light: '#c084fc', dark: '#7e22ce' },
   'ENTP': { main: '#a855f7', light: '#c084fc', dark: '#7e22ce' },
-
-  // BLUE GROUP: ISTJ, ESTJ, ISFJ, ESFJ (SJ - Guardians)
   'ISTJ': { main: '#3b82f6', light: '#60a5fa', dark: '#1e40af' },
   'ESTJ': { main: '#3b82f6', light: '#60a5fa', dark: '#1e40af' },
   'ISFJ': { main: '#3b82f6', light: '#60a5fa', dark: '#1e40af' },
   'ESFJ': { main: '#3b82f6', light: '#60a5fa', dark: '#1e40af' },
-
-  // YELLOW GROUP: ESFP, ISFP, ESTP, ISTP (SP - Artisans)
   'ESFP': { main: '#eab308', light: '#facc15', dark: '#a16207' },
   'ISFP': { main: '#eab308', light: '#facc15', dark: '#a16207' },
   'ESTP': { main: '#eab308', light: '#facc15', dark: '#a16207' },
@@ -89,9 +82,33 @@ const personalityColors: { [key: string]: { main: string; light: string; dark: s
 
 const getProvider = () => {
   const win = window as any;
-  if (win.solana) return win.solana;
-  if (win.backpack) return win.backpack;
-  if (win.xnft && win.xnft.solana) return win.xnft.solana;
+  
+  // PRIORITY SYSTEM:
+  // 1. Backpack (Primary - Solana native)
+  // 2. Phantom (Secondary - Solana support)
+  // 3. Others
+  
+  if (win.backpack) {
+    console.log('✓ Backpack detected (PRIMARY)');
+    return win.backpack;
+  }
+  
+  if (win.phantom && win.phantom.solana) {
+    console.log('✓ Phantom detected (SECONDARY)');
+    return win.phantom.solana;
+  }
+  
+  if (win.solana) {
+    console.log('✓ Generic Solana provider found');
+    return win.solana;
+  }
+  
+  if (win.xnft && win.xnft.solana) {
+    console.log('✓ xNFT detected');
+    return win.xnft.solana;
+  }
+  
+  console.warn('❌ No Solana wallet found!');
   return null;
 };
 
@@ -103,6 +120,59 @@ export default function AssessmentForm() {
   const [walletPubkey, setWalletPubkey] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [nickname, setNickname] = useState('');
+
+  // ← LISTEN FOR WALLET DISCONNECT EVENTS
+  useEffect(() => {
+    const provider = getProvider();
+    if (!provider) return;
+
+    const handleDisconnect = () => {
+      console.log('👋 Wallet disconnected');
+      setWalletPubkey(null);
+      localStorage.removeItem('walletPubkey');
+      localStorage.removeItem('walletConnected');
+    };
+
+    provider.on?.('disconnect', handleDisconnect);
+    
+    return () => {
+      provider.off?.('disconnect', handleDisconnect);
+    };
+  }, []);
+
+  // ← CHECK WALLET VALIDITY ON MOUNT
+  useEffect(() => {
+    const checkWalletValidity = async () => {
+      const savedPubkey = localStorage.getItem('walletPubkey');
+      if (!savedPubkey) return;
+
+      try {
+        const provider = getProvider();
+        if (!provider || !provider.publicKey) {
+          console.log('❌ Saved wallet invalid - clearing');
+          localStorage.removeItem('walletPubkey');
+          setWalletPubkey(null);
+          return;
+        }
+
+        const currentPubkey = provider.publicKey.toString();
+        if (currentPubkey === savedPubkey) {
+          console.log('✓ Wallet restored:', currentPubkey);
+          setWalletPubkey(currentPubkey);
+        } else {
+          console.log('⚠️ Different wallet detected - clearing');
+          localStorage.removeItem('walletPubkey');
+          setWalletPubkey(null);
+        }
+      } catch (err) {
+        console.log('⚠️ Wallet check error:', err);
+        localStorage.removeItem('walletPubkey');
+        setWalletPubkey(null);
+      }
+    };
+
+    checkWalletValidity();
+  }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -151,37 +221,65 @@ export default function AssessmentForm() {
   const connectWallet = async () => {
     try {
       const provider = getProvider();
+      
       if (!provider) {
-        alert('No compatible wallet detected. Please install Backpack or Phantom.');
+        alert(
+          '❌ No Solana wallet detected!\n\n' +
+          'Please install:\n' +
+          '• Backpack (Recommended) - backpack.app\n' +
+          '• Or Phantom - phantom.app\n\n' +
+          'Then refresh this page.'
+        );
         return;
       }
+
       let resp = null;
       if (provider.connect) {
         resp = await provider.connect();
       }
+
       const pubkey = (resp && resp.publicKey)
         ? resp.publicKey.toString()
         : provider.publicKey
         ? provider.publicKey.toString()
         : null;
+
       if (!pubkey) {
-        alert('Wallet connected but no public key returned. Try again.');
+        alert('⚠️ Wallet connected but no public key returned. Please try again.');
         return;
       }
+
+      // ← SAVE SESSION
       setWalletPubkey(pubkey);
+      localStorage.setItem('walletPubkey', pubkey);
+      localStorage.setItem('walletConnected', 'true');
+      console.log('✓ Connected & saved:', pubkey);
+
     } catch (err: any) {
-      console.error('connect error', err);
-      alert('Wallet connection failed: ' + (err?.message || err));
+      console.log('Connect error:', err);
+      
+      if (err?.message?.includes('No active wallet')) {
+        alert('⚠️ No active wallet found. Please:\n1. Open Backpack/Phantom\n2. Refresh page\n3. Try again');
+      } else {
+        alert('Connection failed: ' + (err?.message || err));
+      }
     }
   };
 
   const disconnectWallet = async () => {
     try {
       const provider = getProvider();
-      if (provider && provider.disconnect) await provider.disconnect();
+      if (provider && provider.disconnect) {
+        await provider.disconnect();
+      }
+      
+      // ← CLEAR SESSION
       setWalletPubkey(null);
+      localStorage.removeItem('walletPubkey');
+      localStorage.removeItem('walletConnected');
+      console.log('👋 Disconnected & cleared');
     } catch (err) {
-      console.error('disconnect error', err);
+      console.log('Disconnect error:', err);
     }
   };
 
@@ -362,11 +460,10 @@ export default function AssessmentForm() {
                     e.currentTarget.style.transform = 'translateX(0)';
                   }}
                 >
-                <span>
-                 {['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][idx]}
-               </span>   
-              </button>
-              
+                  <span>
+                    {['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'][idx]}
+                  </span>
+                </button>
               ))}
             </div>
           </div>
@@ -448,22 +545,22 @@ export default function AssessmentForm() {
       </div>
 
       {/* BOTTOM NOTIFICATION - AssessmentRequirements */}
-      {!result && !walletPubkey && (  // ← ADD walletPubkey check
-  <div style={{
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    background: 'transparent',
-    backdropFilter: 'blur(10px)',
-    padding: '1.5rem',
-    zIndex: 2,
-  }}>
-    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <AssessmentRequirements />
-    </div>
-  </div>
-)}
+      {!result && !walletPubkey && (
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          background: 'transparent',
+          backdropFilter: 'blur(10px)',
+          padding: '1.5rem',
+          zIndex: 2,
+        }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <AssessmentRequirements />
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes float {
@@ -515,121 +612,113 @@ function ResultsDisplay({
   setNickname: (nick: string) => void;
 }) {
   const description = PERSONALITY_DESCRIPTIONS[personality] || 'A unique personality type.';
-const [minting, setMinting] = useState(false);
-const color = personalityColors[personality] || { main: '#a855f7', light: '#c084fc', dark: '#7e22ce' };
+  const [minting, setMinting] = useState(false);
+  const color = personalityColors[personality] || { main: '#a855f7', light: '#c084fc', dark: '#7e22ce' };
 
-
-const handleMint = async () => {
-  if (!walletPubkey) {
-    alert('Please connect your wallet first.');
-    return;
-  }
-
-  if (!nickname.trim()) {
-    alert('Please enter a nickname for your NFT!');
-    return;
-  }
-
-  setMinting(true);
-  try {
-    console.log('📸 Generating NFT image...');
-    const nftImageUrl = await generateNFTImage({
-      personality: personality,
-      nickname: nickname.trim(),
-      walletAddress: walletPubkey,
-      network: 'CARV SVM'
-    });
-    console.log('✅ NFT image generated!');
-
-    if (DEV_MODE) {
-      console.log('🟡 DEV MODE: Simulating NFT mint...');
-      const mockTxId = generateMockTxId();
-      const nftData = {
-        walletAddress: walletPubkey,
-        personality: personality,
-        nickname: nickname.trim(),
-        mintedAt: new Date().toISOString(),
-        txId: mockTxId,
-        network: 'carv-svm-testnet',
-        nftImage: nftImageUrl
-      };
-      console.log('💾 Saving mock NFT:', nftData);
-      saveMockNFT(nftData);
-
-      // ✅ Save to Firebase (DEV MODE) - Non-blocking
-      saveNFTToGallery(nftData)
-        .then(() => console.log('✅ Mock NFT saved to Firebase!'))
-        .catch(err => console.warn('⚠️ Gallery save failed:', err));
-
-      alert('✓ NFT Generated! (DEV MODE - No gas fee)\nTX: ' + mockTxId);
-      setTimeout(() => {
-        router.push(`/success?wallet=${walletPubkey}&devMode=true`);
-      }, 1000);
-    } else {
-      console.log('🟢 PRODUCTION: Minting real NFT...');
-      const connection = new Connection(CARV_RPC, 'confirmed');
-      const provider = getProvider();
-
-      if (!provider) {
-        throw new Error('No wallet provider');
-      }
-
-      const transaction = new Transaction().add(
-        SystemProgram.transfer({
-          fromPubkey: new PublicKey(walletPubkey),
-          toPubkey: new PublicKey(walletPubkey),
-          lamports: 0,
-        })
-      );
-
-      transaction.feePayer = new PublicKey(walletPubkey);
-      transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-
-      const signedTx = await provider.signTransaction(transaction);
-      
-      // ✅ Send TX immediately
-      const txId = await connection.sendRawTransaction(signedTx.serialize());
-
-      console.log('✅ TX Sent to blockchain:', txId);
-
-      const nftData = {
-        walletAddress: walletPubkey,
-        personality: personality,
-        nickname: nickname.trim(),
-        mintedAt: new Date().toISOString(),
-        txId,
-        network: 'carv-svm-testnet',
-        nftImage: nftImageUrl
-      };
-
-      console.log('💾 Saving real NFT:', nftData);
-      saveMintedNFT(nftData);
-
-      // ✅ Save to Firebase - NON-BLOCKING (don't await!)
-      console.log('🔄 Saving NFT to gallery in background...');
-      saveNFTToGallery(nftData)
-        .then(() => console.log('✅ NFT saved to Firebase!'))
-        .catch(err => console.error('❌ Gallery save failed:', err));
-
-      // ✅ Redirect IMMEDIATELY
-      alert('🟢 NFT Minted! TX: ' + txId.slice(0, 20) + '...');
-      setTimeout(() => {
-        router.push(`/success?wallet=${walletPubkey}&personality=${personality}&nickname=${nickname}`);
-      }, 1000);
-
-      // ✅ Confirm TX in background (non-blocking)
-      connection.confirmTransaction(txId, 'confirmed')
-        .then(() => console.log('✅ Transaction confirmed on blockchain!'))
-        .catch(err => console.warn('⚠️ Confirmation still pending:', err));
+  const handleMint = async () => {
+    if (!walletPubkey) {
+      alert('Please connect your wallet first.');
+      return;
     }
-  } catch (err: any) {
-    console.error('❌ Mint error:', err);
-    alert('Error: ' + (err?.message || err));
-  } finally {
-    setMinting(false);
-  }
-};
 
+    if (!nickname.trim()) {
+      alert('Please enter a nickname for your NFT!');
+      return;
+    }
+
+    setMinting(true);
+    try {
+      console.log('📸 Generating NFT image...');
+      const nftImageUrl = await generateNFTImage({
+        personality: personality,
+        nickname: nickname.trim(),
+        walletAddress: walletPubkey,
+        network: 'CARV SVM'
+      });
+      console.log('✅ NFT image generated!');
+
+      if (DEV_MODE) {
+        console.log('🟡 DEV MODE: Simulating NFT mint...');
+        const mockTxId = generateMockTxId();
+        const nftData = {
+          walletAddress: walletPubkey,
+          personality: personality,
+          nickname: nickname.trim(),
+          mintedAt: new Date().toISOString(),
+          txId: mockTxId,
+          network: 'carv-svm-testnet',
+          nftImage: nftImageUrl
+        };
+        console.log('💾 Saving mock NFT:', nftData);
+        saveMockNFT(nftData);
+
+        saveNFTToGallery(nftData)
+          .then(() => console.log('✅ Mock NFT saved to Firebase!'))
+          .catch(err => console.warn('⚠️ Gallery save failed:', err));
+
+        alert('✓ NFT Generated! (DEV MODE - No gas fee)\nTX: ' + mockTxId);
+        setTimeout(() => {
+          router.push(`/success?wallet=${walletPubkey}&devMode=true`);
+        }, 1000);
+      } else {
+        console.log('🟢 PRODUCTION: Minting real NFT...');
+        const connection = new Connection(CARV_RPC, 'confirmed');
+        const provider = getProvider();
+
+        if (!provider) {
+          throw new Error('No wallet provider');
+        }
+
+        const transaction = new Transaction().add(
+          SystemProgram.transfer({
+            fromPubkey: new PublicKey(walletPubkey),
+            toPubkey: new PublicKey(walletPubkey),
+            lamports: 0,
+          })
+        );
+
+        transaction.feePayer = new PublicKey(walletPubkey);
+        transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+        const signedTx = await provider.signTransaction(transaction);
+        const txId = await connection.sendRawTransaction(signedTx.serialize());
+
+        console.log('✅ TX Sent to blockchain:', txId);
+
+        const nftData = {
+          walletAddress: walletPubkey,
+          personality: personality,
+          nickname: nickname.trim(),
+          mintedAt: new Date().toISOString(),
+          txId,
+          network: 'carv-svm-testnet',
+          nftImage: nftImageUrl
+        };
+
+        console.log('💾 Saving real NFT:', nftData);
+        saveMintedNFT(nftData);
+
+        console.log('🔄 Saving NFT to gallery in background...');
+        saveNFTToGallery(nftData)
+          .then(() => console.log('✅ NFT saved to Firebase!'))
+          .catch(err => console.error('❌ Gallery save failed:', err));
+
+        alert('🟢 NFT Minted! TX: ' + txId.slice(0, 20) + '...');
+        setTimeout(() => {
+          router.push(`/success?wallet=${walletPubkey}&personality=${personality}&nickname=${nickname}`);
+        }, 1000);
+
+        connection.confirmTransaction(txId, 'confirmed')
+          .then(() => console.log('✅ Transaction confirmed on blockchain!'))
+          .catch(err => console.warn('⚠️ Confirmation still pending:', err));
+      }
+    } catch (err: any) {
+      console.error('❌ Mint error:', err);
+      alert('Error: ' + (err?.message || err));
+    } finally {
+      setMinting(false);
+    }
+  };
 
   return (
     <div style={{
