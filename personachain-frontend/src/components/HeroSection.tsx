@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useWallet } from '@solana/wallet-adapter-react';
 
 export default function HeroSection() {
 

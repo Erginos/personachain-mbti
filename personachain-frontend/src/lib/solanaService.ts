@@ -141,21 +141,18 @@ export const createNFTMetadata = (data: PersonalityNFTData) => {
 // ============ Mint NFT Function (Simplified) ============
 export const mintPersonalityNFT = async (
   walletAddress: string,
-  personalityType: string,
-  nickname: string,
-  rarity: string,
-  color: string
-): Promise<{
-  success: boolean;
-  txId?: string;
-  error?: string;
-}> => {
+  _personalityType: string,
+  _nickname: string,
+  _rarity: string,
+  _color: string
+) => {
+
   try {
-    if (!window.backpack) {
+    if (!(window as any).backpack) {
       throw new Error('Backpack wallet not found. Please install Backpack extension.');
     }
 
-    const provider = window.backpack;
+    const provider = (window as any).backpack;
 
     const connection = CARV_CONNECTION;
     const pubkey = new PublicKey(walletAddress);

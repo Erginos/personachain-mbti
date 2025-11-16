@@ -8,7 +8,7 @@ import { useWallet } from '@/context/WalletContext';
 interface NavItem {
   label: string;
   href: string;
-  icon: string;
+  icon?: string;
 }
 
 const navItems: NavItem[] = [
