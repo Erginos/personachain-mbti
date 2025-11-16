@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useWallet } from '@solana/wallet-adapter-react';
 
 export default function HeroSection() {
-  const { connected } = useWallet();
 
   return (
     <section className="min-h-screen w-full flex flex-col items-center justify-center text-center px-4 py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">

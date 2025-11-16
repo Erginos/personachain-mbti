@@ -3,7 +3,7 @@ import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { address: string } }
 ) {
   try {
