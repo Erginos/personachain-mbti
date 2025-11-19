@@ -1121,3 +1121,388 @@ footer {
     padding: var(--space-24) var(--space-12);
   }
 }
+/* HOME PAGE - RESPONSIVE STYLES */
+
+/* Mobile First */
+.hallOfPersonalities {
+  padding: 2rem 1rem;
+  background: #0a0e17;
+}
+
+.hallContainer {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.hallHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.hallSubtitle {
+  color: #c8a882;
+  font-size: 0.875rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.hallTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.hallDescription {
+  font-size: 1rem;
+  color: #94a3b8;
+  margin-top: 0.5rem;
+}
+
+.hallDivider {
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #c8a882, transparent);
+  margin: 1.5rem auto 0;
+}
+
+/* Carousel Container - CRITICAL FIXES */
+.carouselWrapper {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, rgba(10, 14, 23, 0.8) 0%, transparent 10%, transparent 90%, rgba(10, 14, 23, 0.8) 100%);
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
+}
+
+.carouselTrack {
+  display: flex;
+  gap: var(--space-16);
+  padding-right: var(--space-16);
+  padding-left: var(--space-16);
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.carouselCard {
+  min-width: 180px;
+  flex-shrink: 0;
+  background: #1f2937;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.carouselImage {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #111827;
+}
+
+.carouselImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.carouselInfo {
+  padding: 1rem;
+}
+
+.carouselNickname {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  margin-top: 0;
+  color: #fff;
+  word-break: break-word;
+}
+
+.carouselPersonality {
+  font-size: 0.875rem;
+  color: #a855f7;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  margin-top: 0;
+}
+
+.carouselDate {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin: 0;
+}
+
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Tablet - 640px and up */
+@media (min-width: 640px) {
+  .hallOfPersonalities {
+    padding: 4rem 2rem;
+  }
+
+  .hallHeader {
+    margin-bottom: 3rem;
+  }
+
+  .hallTitle {
+    font-size: 2.25rem;
+  }
+
+  .hallDivider {
+    width: 50px;
+    margin: 2rem auto 0;
+  }
+
+  .carouselWrapper {
+    padding: 2rem;
+  }
+
+  .carouselTrack {
+    gap: 1.5rem;
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+
+  .carouselCard {
+    min-width: 220px;
+  }
+}
+
+/* Desktop - 1024px and up */
+@media (min-width: 1024px) {
+  .hallOfPersonalities {
+    padding: 6rem 2rem;
+  }
+
+  .hallHeader {
+    margin-bottom: 4rem;
+  }
+
+  .hallTitle {
+    font-size: 3rem;
+  }
+
+  .hallDescription {
+    font-size: 1.125rem;
+  }
+
+  .hallDivider {
+    width: 60px;
+    margin: 2rem auto 0;
+  }
+
+  .carouselWrapper {
+    padding: 2rem 0;
+  }
+
+  .carouselTrack {
+    gap: 2rem;
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+
+  .carouselCard {
+    min-width: 220px;
+  }
+}
+/* Mobile - Show only 2-3 cards, allow manual scroll */
+@media (max-width: 640px) {
+  .carouselTrack {
+    animation: none;
+    /* Cards stay static, user can scroll manually */
+  }
+}
+
+/* Tablet & Desktop - Auto-scroll animation */
+@media (min-width: 641px) {
+  .carouselTrack {
+    animation: scroll-left 25s linear infinite;
+  }
+}
+
+/* MOBILE OPTIMIZATION - Limit carousel width on mobile */
+@media (max-width: 480px) {
+  .carouselWrapper {
+    padding: 1rem 0.5rem !important;
+    margin: 0 auto !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  .carouselTrack {
+    animation: none !important; /* Disable animation on mobile */
+    gap: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    padding-left: 0.5rem !important;
+    overflow-x: auto !important;
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important; /* iOS smooth scroll */
+  }
+
+  .carouselCard {
+    min-width: 140px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .carouselInfo {
+    padding: 0.5rem !important;
+  }
+
+  .carouselNickname {
+    font-size: 0.75rem !important;
+  }
+
+  .carouselPersonality {
+    font-size: 0.65rem !important;
+  }
+
+  .carouselDate {
+    font-size: 0.6rem !important;
+  }
+}
+
+/* Landscape mode - VERY COMPACT */
+@media (max-width: 900px) and (orientation: landscape) {
+  .hallOfPersonalities {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  .hallHeader {
+    margin-bottom: 0.5rem !important;
+  }
+
+  .hallTitle {
+    font-size: 1rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .hallDescription {
+    display: none !important; /* Hide description in landscape */
+  }
+
+  .hallDivider {
+    display: none !important; /* Hide divider in landscape */
+  }
+
+  .carouselWrapper {
+    padding: 0.5rem !important;
+  }
+
+  .carouselTrack {
+    gap: 0.25rem !important;
+    padding-right: 0.25rem !important;
+    padding-left: 0.25rem !important;
+  }
+
+  .carouselCard {
+    min-width: 100px !important;
+  }
+
+  .carouselImage {
+    aspect-ratio: 1 !important;
+  }
+
+  .carouselInfo {
+    padding: 0.25rem !important;
+  }
+
+  .carouselNickname {
+    font-size: 0.65rem !important;
+    margin-bottom: 0.1rem !important;
+  }
+
+  .carouselPersonality {
+    font-size: 0.55rem !important;
+  }
+
+  .carouselDate {
+    font-size: 0.5rem !important;
+  }
+}
+
+/* Desktop - Auto-scroll */
+.carouselDesktop {
+  display: none; /* Hidden on mobile */
+}
+
+@media (min-width: 768px) {
+  .carouselDesktop {
+    display: block !important;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, rgba(10, 14, 23, 0.8) 0%, transparent 10%, transparent 90%, rgba(10, 14, 23, 0.8) 100%);
+    border-radius: 12px;
+    padding: 2rem;
+  }
+
+  .carouselDesktop .carouselTrack {
+    animation: scroll-left 25s linear infinite;
+  }
+}
+
+/* Mobile - Paginated */
+.carouselMobile {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .carouselMobile {
+    display: none !important;
+  }
+}
+
+.carouselMobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.paginationCard {
+  width: 100%;
+  max-width: 280px;
+  background: #1f2937;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.paginationControls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.paginationBtn {
+  padding: 0.75rem 1rem;
+  background: rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  color: #a855f7;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.paginationBtn:hover {
+  background: rgba(168, 85, 247, 0.3);
+}
+
+.paginationCounter {
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  min-width: 60px;
+  text-align: center;
+}

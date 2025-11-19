@@ -1,14 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getNFTGallery, NFTGalleryData } from '@/lib/firebase';
 
 export default function Home() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [nfts, setNfts] = useState<(NFTGalleryData & { id: string })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
+  // Mouse tracking for animated background
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({
@@ -25,12 +31,62 @@ export default function Home() {
   useEffect(() => {
     const fetchNFTs = async () => {
       setLoading(true);
-      const galleryNFTs = await getNFTGallery(50);
+      const galleryNFTs = await getNFTGallery(10);
       setNfts(galleryNFTs);
       setLoading(false);
     };
     fetchNFTs();
   }, []);
+
+  // Pagination handlers with transition
+  const handleNextPage = () => {
+    setIsTransitioning(true);
+    setCurrentPage((prev) => (prev + 1) % nfts.length);
+    setTimeout(() => setIsTransitioning(false), 300);
+  };
+
+  const handlePrevPage = () => {
+    setIsTransitioning(true);
+    setCurrentPage((prev) => (prev - 1 + nfts.length) % nfts.length);
+    setTimeout(() => setIsTransitioning(false), 300);
+  };
+
+  // Swipe handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    setTouchEnd(e.changedTouches[0].clientX);
+    handleSwipe();
+  };
+
+  const handleSwipe = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      handleNextPage();
+    } else if (isRightSwipe) {
+      handlePrevPage();
+    }
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') handlePrevPage();
+      if (e.key === 'ArrowRight') handleNextPage();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const currentNFT = nfts[currentPage];
 
   return (
     <div className="page-wrapper" style={{
@@ -49,14 +105,13 @@ export default function Home() {
         padding: '2rem 0',
         overflow: 'hidden',
       }}>
-        {/* Animated Background */}
+        {/* Animated Background Orbs */}
         <div style={{
           position: 'absolute',
           inset: 0,
           zIndex: 0,
           pointerEvents: 'none',
         }}>
-          {/* Moving Orbs */}
           <div style={{
             position: 'absolute',
             width: '500px',
@@ -96,7 +151,7 @@ export default function Home() {
             transition: 'transform 0.3s ease',
           }}></div>
         </div>
-          
+
         {/* Hero Content */}
         <div className="hero-content" style={{
           position: 'relative',
@@ -106,18 +161,19 @@ export default function Home() {
           margin: '0 auto',
           padding: '2rem',
         }}>
-          <h1 className="hero-title" style={{
-            fontSize: '4rem',
+          <h1 style={{
+            fontSize: 'clamp(2rem, 8vw, 4rem)',
             fontWeight: '700',
             marginBottom: '1rem',
             color: '#ffffff',
             animation: 'slideDown 0.8s ease-out',
+            margin: 0,
           }}>
             PersonaChain
           </h1>
 
-          <h2 className="hero-subtitle" style={{
-            fontSize: '2.5rem',
+          <h2 style={{
+            fontSize: 'clamp(1.5rem, 6vw, 2.5rem)',
             fontWeight: '700',
             marginBottom: '2rem',
             background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #3b82f6 100%)',
@@ -125,16 +181,18 @@ export default function Home() {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             animation: 'slideUp 0.8s ease-out',
+            margin: 0,
           }}>
             Discover Your Personality On-Chain
           </h2>
 
-          <p className="hero-description" style={{
-            fontSize: '1.125rem',
+          <p style={{
+            fontSize: 'clamp(1rem, 3vw, 1.125rem)',
             color: '#cbd5e1',
             marginBottom: '2.5rem',
             lineHeight: '1.6',
             animation: 'fadeIn 1s ease-out 0.2s both',
+            margin: 0,
           }}>
             Take our assessment, mint your personality NFT, and join the Web3 community of personalities.
           </p>
@@ -210,12 +268,12 @@ export default function Home() {
       </section>
 
       {/* OUR HISTORY SECTION */}
-      <section className="section our-history" style={{
+      <section style={{
         padding: '6rem 2rem',
         background: '#0f1419',
         position: 'relative',
       }}>
-        <div className="container" style={{
+        <div style={{
           maxWidth: '1200px',
           margin: '0 auto',
         }}>
@@ -233,7 +291,7 @@ export default function Home() {
               OUR HISTORY
             </span>
             <h2 style={{
-              fontSize: '3rem',
+              fontSize: 'clamp(1.75rem, 6vw, 3rem)',
               fontWeight: '700',
               marginTop: '1rem',
               color: '#fff',
@@ -255,8 +313,6 @@ export default function Home() {
             gridTemplateColumns: '1fr 1fr',
             gap: '4rem',
             alignItems: 'center',
-            maxWidth: '1200px',
-            margin: '0 auto',
           }}>
             {/* Left */}
             <div>
@@ -324,61 +380,140 @@ export default function Home() {
                 <h4 style={{ color: '#a855f7', fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>
                   Your Digital DNA
                 </h4>
-                <p style={{ color: '#94a3b8' }}>Immutable. Permanent. Yours Forever.</p>
+                <p style={{ color: '#94a3b8', margin: 0 }}>Immutable. Permanent. Yours Forever.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* HALL OF PERSONALITIES SECTION - AUTO SCROLL */}
-      <section className="section hall-of-personalities" style={{
-        padding: '6rem 2rem',
-        background: '#0a0e17',
-        position: 'relative',
-      }}>
-        <div className="container" style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-        }}>
+      {/* HALL OF PERSONALITIES SECTION */}
+      <section className="hallOfPersonalities">
+        <div className="hallContainer">
           {/* Section Header */}
-          <div style={{
-            textAlign: 'center',
-            marginBottom: '4rem',
-          }}>
-            <span style={{
-              color: '#c8a882',
-              fontSize: '0.875rem',
-              letterSpacing: '2px',
-              textTransform: 'uppercase',
-            }}>
-              OUR WORK
-            </span>
-            <h2 style={{
-              fontSize: '3rem',
-              fontWeight: '700',
-              marginTop: '1rem',
-              color: '#fff',
-              marginBottom: '1rem',
-            }}>
-              Hall of Personalities
-            </h2>
-            <p style={{
-              fontSize: '1.125rem',
-              color: '#94a3b8',
-              marginTop: '1rem',
-            }}>
+          <div className="hallHeader">
+            <span className="hallSubtitle">OUR WORK</span>
+            <h2 className="hallTitle">Hall of Personalities</h2>
+            <p className="hallDescription">
               Discover all PersonaChain NFTs minted by the community
             </p>
-            <div style={{
-              width: '60px',
-              height: '3px',
-              background: 'linear-gradient(90deg, transparent, #c8a882, transparent)',
-              margin: '2rem auto 0',
-            }}></div>
+            <div className="hallDivider"></div>
           </div>
 
-          {/* AUTO-SCROLL CAROUSEL */}
+          {/* DESKTOP - Auto-scroll carousel */}
+          {!loading && nfts.length > 0 && (
+            <div className="carouselWrapper carouselDesktop">
+              <div className="carouselTrack">
+                {[...nfts, ...nfts].map((nft, idx) => (
+                  <div
+                    key={`${nft.id}-${idx}`}
+                    className="carouselCard"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)';
+                      e.currentTarget.style.boxShadow = '0 10px 30px rgba(168, 85, 247, 0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.2)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    <div className="carouselImage">
+                      <img src={nft.nftImage} alt={nft.nickname} />
+                    </div>
+                    <div className="carouselInfo">
+                      <h3 className="carouselNickname">{nft.nickname}</h3>
+                      <p className="carouselPersonality">{nft.personality}</p>
+                      <p className="carouselDate">
+                        {new Date(nft.mintedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* MOBILE - Paginated cards with swipe support */}
+          {!loading && nfts.length > 0 && currentNFT && (
+            <div 
+              className="carouselMobile"
+              ref={carouselRef}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              style={{ cursor: 'grab', userSelect: 'none', position: 'relative' }}
+            >
+              <div className="paginationCard" style={{
+                opacity: isTransitioning ? 0 : 1,
+                transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out',
+                transform: isTransitioning ? 'scale(0.95)' : 'scale(1)',
+              }}>
+                <div className="carouselImage">
+                  <img src={currentNFT.nftImage} alt={currentNFT.nickname} />
+                </div>
+                <div className="carouselInfo">
+                  <h3 className="carouselNickname">{currentNFT.nickname}</h3>
+                  <p className="carouselPersonality">{currentNFT.personality}</p>
+                  <p className="carouselDate">
+                    {new Date(currentNFT.mintedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Pagination Controls - SIDE BY SIDE */}
+              <div style={{
+                display: 'flex',
+                gap: '1rem',
+                justifyContent: 'center',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                marginTop: '1.5rem',
+              }}>
+                <button 
+                  className="paginationBtn" 
+                  onClick={handlePrevPage}
+                  style={{ 
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '0.875rem',
+                    flex: '0 0 auto',
+                  }}
+                >
+                  ← Previous
+                </button>
+                <span style={{
+                  color: '#cbd5e1',
+                  fontSize: '0.875rem',
+                  minWidth: '70px',
+                  textAlign: 'center',
+                  flex: '0 0 auto',
+                }}>
+                  {currentPage + 1} / {nfts.length}
+                </span>
+                <button 
+                  className="paginationBtn" 
+                  onClick={handleNextPage}
+                  style={{ 
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '0.875rem',
+                    flex: '0 0 auto',
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
+
+              {/* Swipe hint */}
+              <p style={{
+                fontSize: '0.75rem',
+                color: '#64748b',
+                textAlign: 'center',
+                marginTop: '0.75rem',
+              }}>
+                Swipe left/right or use arrow keys 👆
+              </p>
+            </div>
+          )}
+
+          {/* Loading State */}
           {loading && (
             <div style={{
               textAlign: 'center',
@@ -389,95 +524,7 @@ export default function Home() {
             </div>
           )}
 
-          {!loading && nfts.length > 0 && (
-            <div style={{
-              position: 'relative',
-              overflow: 'hidden',
-              background: 'linear-gradient(90deg, rgba(10, 14, 23, 0.8) 0%, transparent 10%, transparent 90%, rgba(10, 14, 23, 0.8) 100%)',
-              borderRadius: '12px',
-              padding: '2rem 0',
-            }}>
-              {/* Carousel Wrapper */}
-              <div style={{
-                display: 'flex',
-                animation: 'scroll-left 25s linear infinite',
-                gap: '2rem',
-                paddingRight: '2rem',
-                paddingLeft: '2rem',
-              }}>
-                {/* Duplicate NFTs for seamless infinite loop */}
-                {[...nfts, ...nfts].map((nft, idx) => (
-                  <div
-                    key={`${nft.id}-${idx}`}
-                    style={{
-                      minWidth: '220px',
-                      flexShrink: 0,
-                      background: '#1f2937',
-                      border: '1px solid rgba(168, 85, 247, 0.2)',
-                      borderRadius: '12px',
-                      overflow: 'hidden',
-                      transition: 'all 0.3s ease',
-                      cursor: 'default',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.5)';
-                      e.currentTarget.style.boxShadow = '0 10px 30px rgba(168, 85, 247, 0.15)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.2)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
-                    {/* NFT Image */}
-                    <div style={{
-                      width: '100%',
-                      aspectRatio: '1',
-                      overflow: 'hidden',
-                      background: '#111827',
-                    }}>
-                      <img
-                        src={nft.nftImage}
-                        alt={nft.nickname}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    </div>
-
-                    {/* Info */}
-                    <div style={{ padding: '1.5rem' }}>
-                      <h3 style={{
-                        fontSize: '1.125rem',
-                        fontWeight: 'bold',
-                        marginBottom: '0.5rem',
-                        color: '#fff',
-                        wordBreak: 'break-word',
-                      }}>
-                        {nft.nickname}
-                      </h3>
-                      <p style={{
-                        fontSize: '0.875rem',
-                        color: '#a855f7',
-                        fontWeight: '600',
-                        marginBottom: '0.75rem',
-                      }}>
-                        {nft.personality}
-                      </p>
-                      <p style={{
-                        fontSize: '0.75rem',
-                        color: '#64748b',
-                      }}>
-                        {new Date(nft.mintedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
+          {/* Empty State */}
           {!loading && nfts.length === 0 && (
             <div style={{
               textAlign: 'center',
@@ -500,7 +547,7 @@ export default function Home() {
         color: '#94a3b8',
         textAlign: 'center',
       }}>
-        <p>© 2025 PersonaChain. Built on Solana | CARV SVM Testnet</p>
+        <p style={{ margin: 0 }}>© 2025 PersonaChain. Built on Solana | CARV SVM Testnet</p>
       </footer>
 
       <style>{`
@@ -532,34 +579,19 @@ export default function Home() {
         }
 
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
 
         @keyframes scroll-left {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
 
-        @media (max-width: 768px) {
+        /* Mobile optimizations */
+        @media (max-width: 767px) {
           div[style*="gridTemplateColumns: '1fr 1fr'"] {
             grid-template-columns: 1fr !important;
-          }
-          
-          h1 {
-            font-size: 2.5rem !important;
-          }
-          
-          h2 {
-            font-size: 1.75rem !important;
           }
         }
       `}</style>
